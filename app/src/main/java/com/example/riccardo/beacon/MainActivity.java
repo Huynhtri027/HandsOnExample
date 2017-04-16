@@ -22,39 +22,22 @@ import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
-import com.estimote.sdk.repackaged.retrofit_v1_9_0.retrofit.http.POST;
-import com.estimote.sdk.telemetry.EstimoteTelemetry;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import com.example.riccardo.beacon.Item;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.net.*;
 
 public class MainActivity extends AppCompatActivity {
-    private final static String blueberryUUID = "B9407F30-F5F8-466E-AFF9-25556B57FE6D";
-    private final static int blueberryMajor = 23082;
-    private final static int blueberryMinor = 20505;
-    private final static String mintUUID = "B9407F30-F5F8-466E-AFF9-25556B57FE6D";
-    private final static int mintMajor = 30781;
-    private final static int mintMinor = 5475;
+    private final static String my_UUID = "B9407F30-F5F8-466E-AFF9-25556B57FE6D";
     private final static String TAG = "HttpPost";
     private final static String TAG2 = "MainActivity";
-
     private final static String URL = "http://smartsupermarket.altervista.org/provaRead.php";
     private BeaconManager beaconManager; //it is the gateway to beacon's interactions
     private Region region;
-    private static final Map<String, List<String>> PLACES_BY_BEACONS;
     private String scanId;
     private RequestQueue queue;
     private String uuid;
@@ -67,58 +50,25 @@ public class MainActivity extends AppCompatActivity {
      */
 
 
-    static {
-        Map<String, List<String>> placesByBeacons = new HashMap<>();
-        placesByBeacons.put(blueberryMajor + ":" + blueberryMinor, new ArrayList<String>() {{
-            add("matita");
-            // read as: "Heavenly Sandwiches" is closest
-            // to the beacon with major 22504 and minor 48827
-            add("Penna");
-            // "Green & Green Salads" is the next closest
-            add("gomma");
-            // "Mini Panini" is the furthest away
-        }});
-        placesByBeacons.put(mintMajor + ":" + mintMinor, new ArrayList<String>() {{
-            add("scarpe");
-            add("lucidascarpe");
-            add("scarpiera");
-        }});
-        PLACES_BY_BEACONS = Collections.unmodifiableMap(placesByBeacons);
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         beaconManager = new BeaconManager(getApplicationContext());
+        beaconManager.setForegroundScanPeriod(5000, 5000);
 
-        region = new Region("ranged region", UUID.fromString(blueberryUUID), null, null);
-
+        region = new Region("monitored region", UUID.fromString(my_UUID), null, null);
         //start monitoring the blueberry beacon
         beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
             @Override
             public void onServiceReady() {
-                beaconManager.startMonitoring(new Region(
-                        "monitored region",
-                        UUID.fromString(blueberryUUID),
-                        blueberryMajor, blueberryMinor));
+                beaconManager.startMonitoring(region);
             }
         });
 
         queue = Volley.newRequestQueue(this);
-        /*
-        System.out.println("LOCATION = " + beaconManager.startLocationDiscovery());
-        beaconManager.setMonitoringListener(new BeaconManager.MonitoringListener() {
-            @Override
-            public void onEnteredRegion(Region region, List<Beacon> list) {
-                showNotification("CI SIAMO", "BLUEBERRY BEACON HAS BEEN FOUND");
-            }
-            @Override
-            public void onExitedRegion(Region region) {
-                // could add an "exit" notification too if you want (-:
-            }
-        });*/
+
 
         //ranging listener for obtain the nearest beacon and show the values of the map
         //associated with it.
@@ -150,8 +100,23 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Response = " + response);
                 ListView listView = (ListView) findViewById(R.id.listview);
                 String[] split = response.split("<br>");
+                Item item;
+                ArrayList<Item> items = new ArrayList();
+                for (String s : split){
+                    Log.d(TAG, s);
+                    String[] fields = s.split(",");
+                    if (fields.length == 3) {
+                        Log.d(TAG, "f1 " + fields[0] + " f2 " + fields[1] + " f3 " + fields[2]);
+                        item = new Item(fields[0], fields[1], fields[2]);
+                        items.add(item);
+                    }
+                }
+                CustomAdapter adapter = new CustomAdapter(getApplicationContext(), items);
+                listView.setAdapter(adapter);
+/*
                 ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.row, split);
-                listView.setAdapter(arrayAdapter);
+                listView.setAdapter(arrayAdapter);*/
+
             }
         }, new Response.ErrorListener(){
             @Override
@@ -209,29 +174,4 @@ public class MainActivity extends AppCompatActivity {
         beaconManager.stopTelemetryDiscovery(scanId);
     }
 
-    public void showNotification(String title, String message) {
-        Intent notifyIntent = new Intent(this, MainActivity.class);
-        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivities(this, 0,
-                new Intent[]{notifyIntent}, PendingIntent.FLAG_UPDATE_CURRENT);
-        Notification notification = new Notification.Builder(this)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
-                .build();
-        notification.defaults |= Notification.DEFAULT_SOUND;
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, notification);
-    }
-
-    private List<String> placesNearBeacon(Beacon beacon) {
-        String beaconKey = String.format("%d:%d", beacon.getMajor(), beacon.getMinor());
-        if (PLACES_BY_BEACONS.containsKey(beaconKey)) {
-            return PLACES_BY_BEACONS.get(beaconKey);
-        }
-        return Collections.emptyList();
-    }
 }
