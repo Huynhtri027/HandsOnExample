@@ -15,4 +15,5 @@ This application has been developed as an individual project for Pervasive Syste
 
 # Links
 Link to the presentation ---> https://www.slideshare.net/RiccardoDiStefano5/estimote-beacon-presentation
+
 Link to my LinkedIn account ---> https://www.linkedin.com/in/riccardo-di-stefano-439a11134/
