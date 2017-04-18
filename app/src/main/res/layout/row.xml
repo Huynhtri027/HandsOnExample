@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <TableRow xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:stretchColumns="0,1">
@@ -16,20 +15,21 @@
 
         <TextView
             android:id="@+id/name"
-            android:layout_width="wrap_content"
+            android:layout_width="150dp"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:textColor="@color/black"
             android:layout_marginBottom="5dp"
-            android:textAppearance="@android:style/TextAppearance.Holo.Medium" />
+            android:gravity="center_vertical"
+            android:textAppearance="@android:style/TextAppearance.Holo.Medium"
+            android:textColor="@color/black" />
 
         <TextView
             android:id="@+id/price"
             android:layout_width="wrap_content"
             android:layout_below="@id/name"
+            android:layout_alignStart="@+id/name"
+            android:gravity="center_vertical"
             android:textColor="@color/black"
             android:layout_height="wrap_content"
-            android:gravity="clip_vertical"
             android:textAppearance="@android:style/TextAppearance.Holo.Medium" />
     </RelativeLayout>
 
@@ -39,7 +39,9 @@
         android:layout_width="40dp"
         android:layout_height="100dp"
         android:layout_weight="0.5"
-        android:layout_marginRight="20dp"/>
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
 
 
 </TableRow>

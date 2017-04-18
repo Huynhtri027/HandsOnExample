@@ -1,8 +1,5 @@
 package com.example.riccardo.beacon;
 
-/**
- * Created by Riccardo on 16/04/2017.
- */
 
 public class Item {
     public String name;

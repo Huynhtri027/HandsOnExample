@@ -34,7 +34,7 @@ public class CustomAdapter extends ArrayAdapter<Item> {
         // Populate the data into the template view using the data object
         tvName.setText(item.name);
         tvPrice.setText(item.price);
-        Picasso.with(getContext()).load(item.photoPath).fit().into(imageView);
+        Picasso.with(getContext()).load(item.photoPath).into(imageView);
         // Return the completed view to render on screen
         return convertView;
     }
