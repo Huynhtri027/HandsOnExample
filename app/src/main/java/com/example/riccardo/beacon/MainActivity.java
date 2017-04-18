@@ -1,5 +1,6 @@
 package com.example.riccardo.beacon;
 
+import android.nfc.Tag;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -29,8 +30,13 @@ public class MainActivity extends AppCompatActivity {
     private final static String REGION_ID = "monitored region";
     private final static String URL = "http://smartsupermarket.altervista.org/databaseRead.php";
     private final static String EURO_SYMBOL = " \u20ac";
+    private final static int NAME_POS = 0;
+    private final static int PRICE_POS = 1;
+    private final static int PHOTO_PATH_POS = 2;
+    private final static int NUM_FIELDS = 3;
+
     private final static int SCAN_PERIOD = 4000;    //milliseconds
-    private final static int WAIT_PERIOD = 4000;    //milliseconds
+    private final static int WAIT_PERIOD = 3000;    //milliseconds
     private BeaconManager beaconManager; //it is the gateway to beacon's interactions
     private Region region;
     private String scanId;
@@ -69,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
             public void onBeaconsDiscovered(Region region, List<Beacon> list) {
                 if (!list.isEmpty()) {
                     Beacon nearestBeacon = list.get(0);
-                    if (nearestBeacon != lastSeenBeacon) {
+                    if (!nearestBeacon.equals(lastSeenBeacon)) {
                         lastSeenBeacon = nearestBeacon;
                         Log.i(TAG, "New beacon has been discovered");
                         uuid = nearestBeacon.getProximityUUID().toString().replace("-", "");
@@ -98,11 +104,11 @@ public class MainActivity extends AppCompatActivity {
                 for (String s : split){
                     Log.d(TAG_HTTP, s);
                     String[] fields = s.split(",");
-                    if (fields.length == 3) {
+                    if (fields.length == NUM_FIELDS) {
                         //add the euro symbol
-                        fields[1] += EURO_SYMBOL;
+                        adjustPrice(fields);
                         Log.d(TAG_HTTP, "f1 " + fields[0] + " f2 " + fields[1] + " f3 " + fields[2]);
-                        item = new Item(fields[0], fields[1], fields[2]);
+                        item = new Item(fields[NAME_POS], fields[PRICE_POS], fields[PHOTO_PATH_POS]);
                         items.add(item);
                     }
                 }
@@ -129,6 +135,17 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         return request;
+    }
+
+
+    private void adjustPrice(String[] fields){
+        String[] split = fields[PRICE_POS].split("\\.");
+        if (split.length == 1) //not decimal, e.g. 1
+            fields[PRICE_POS] += ".00" + EURO_SYMBOL;
+        else if(split.length == 2 && split[1].length() == 1)   //1 decimal digit, e.g. 1.2
+            fields[PRICE_POS] += "0" + EURO_SYMBOL;
+        else    // 2 decimal digits, e.g. 1.23
+            fields[PRICE_POS] += EURO_SYMBOL;
     }
 
     @Override
