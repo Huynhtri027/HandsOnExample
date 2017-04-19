@@ -1,6 +1,6 @@
 package com.example.riccardo.beacon;
 
-import android.nfc.Tag;
+
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private final static int WAIT_PERIOD = 3000;    //milliseconds
     private BeaconManager beaconManager; //it is the gateway to beacon's interactions
     private Region region;
-    private String scanId;
     private RequestQueue queue;
     private String uuid;
     private int major;
@@ -53,20 +52,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //Initialize the requestQueue
+        queue = Volley.newRequestQueue(this);
+
+        //create beaconManager
         beaconManager = new BeaconManager(getApplicationContext());
         beaconManager.setForegroundScanPeriod(SCAN_PERIOD, WAIT_PERIOD);
         region = new Region(REGION_ID, UUID.fromString(my_UUID), null, null);
-        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
-            @Override
-            public void onServiceReady() {
-                beaconManager.startMonitoring(region);
-                Log.i(TAG, "Start monitoring");
-            }
-        });
-
-
-        queue = Volley.newRequestQueue(this);
-
 
         //ranging listener for obtain the nearest beacon and querying the database
 
@@ -93,7 +85,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     private StringRequest setupHttpPost(){
-        StringRequest request = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+
+        StringRequest request = new StringRequest(Request.Method.POST, URL,
+                new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 Log.i(TAG_HTTP, "Http response has been received");
@@ -163,25 +157,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         beaconManager.stopRanging(region);
-
         super.onPause();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
-            @Override
-            public void onServiceReady() {
-                scanId = beaconManager.startTelemetryDiscovery();
-            }
-        });
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        beaconManager.stopTelemetryDiscovery(scanId);
     }
 
 }
